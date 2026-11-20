@@ -153,6 +153,7 @@
     padding:28px 20px 20px; position:relative; z-index:0;
     box-shadow:0 10px 30px rgba(60,50,40,.3);
     transform:rotate(-1deg); border:1px solid #e8dcc8;
+    display: flex; flex-direction: column;
   }
   .card-paper::before{
     content:"❤"; position:absolute; top:-14px; right:14px;
@@ -165,10 +166,20 @@
     display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase;
     letter-spacing:.8px; color:#fff; background:var(--sage);
     padding:4px 10px; border-radius:20px; margin-bottom:10px;
+    align-self: flex-start;
   }
   .task-tag.mine{background:var(--terra);}
   .task-text{font-family:'Caveat',cursive; font-size:26px; line-height:1.15; color:var(--deep); margin:6px 0 18px;}
   .modal-actions{display:flex; flex-direction:column; gap:10px;}
+  
+  /* Стиль для подписи исполнителя */
+  .task-executor {
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    color: #9a8a78;
+    margin-top: 10px;
+    align-self: flex-start;
+  }
 
   .level-btn{
     display:flex; align-items:center; gap:12px; text-align:left;
@@ -215,7 +226,7 @@
 <body>
 <div class="app">
   <h1>Морской бой</h1>
-  <div class="subtitle">Миссия любви </div>
+  <div class="subtitle">Миссия любви · на одном устройстве</div>
 
   <!-- ЭКРАН 1: ИМЕНА -->
   <section id="screen-names" class="screen active">
@@ -251,9 +262,8 @@
   <!-- ЭКРАН 3: УРОВЕНЬ -->
   <section id="screen-level" class="screen">
     <div class="label" style="text-align:center;">Уровень заданий</div>
-    <div style="text-align:center; font-family:'Caveat'; font-size:22px; color:var(--deep); margin-bottom:14px;">Что сегодня между вами?</div>
     <div id="levels"></div>
-    <button class="btn" id="start-game" disabled>Начать игру ⚓</button>
+    <button class="btn" id="start-game" disabled>Начать игру</button>
   </section>
 
   <!-- ЭКРАН 4: ИГРА -->
@@ -265,10 +275,6 @@
     <div class="target-label" id="target-label">Поле соперника — выбери клетку</div>
     <div class="board-wrap">
       <div class="board" id="board-target"></div>
-    </div>
-    <div class="target-label" style="margin-top:10px; opacity:.7;">Твоё поле</div>
-    <div class="board-wrap" style="padding:8px;">
-      <div class="board" id="board-own"></div>
     </div>
     <div class="hint" id="game-hint">Нажимай на клетки поля соперника. Попал — выполняй задание!</div>
   </section>
@@ -292,7 +298,11 @@
     <div class="card-paper">
       <span class="task-tag" id="task-tag">Задание</span>
       <div class="task-text" id="task-text">…</div>
-      <div class="modal-actions">
+      
+      <!-- Блок с именем исполнителя -->
+      <div class="task-executor" id="task-executor">Выполняет: Игрок</div>
+      
+      <div class="modal-actions" style="margin-top: 15px;">
         <button class="btn secondary" id="btn-done">Выполнено! ★</button>
         <button class="btn ghost" id="btn-replace">Заменить ↻</button>
       </div>
@@ -303,65 +313,21 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* =========================================================
-   ДАННЫЕ ЗАДАНИЙ
-   ========================================================= */
 const TASKS = {
   "Мило": {
-    "Милые": [
-      "Обнять партнёра и не отпускать ровно 30 секунд.",
-      "Сказать партнёру 3 комплимента.",
-      "Сделать партнёру массаж головы в течение 2 минут.",
-      "Сказать друг другу «Я тебя люблю»."
-    ],
-    "Смешные": [
-      "Изобразить любое действие или слово партнёра — а он должен угадать.",
-      "Сделать самое смешное селфи вдвоём и поставить на аватарку в течение часа."
-    ],
-    "Заботливые": [
-      "Принести партнёру стакан воды или его любимый напиток.",
-      "Сделать партнёру лёгкий массаж плеч и шеи.",
-      "Укрыть партнёра пледом и принести что-нибудь вкусненькое.",
-      "Написать партнёру записку с тёплыми словами и спрятать в карман.",
-      "Взять на себя одно домашнее дело партнёра на сегодня."
-    ],
-    "Вопросы": [
-      "Какой твой самый любимый момент, проведённый со мной?",
-      "Что я делаю такого, что всегда заставляет тебя улыбаться?",
-      "Каким ты видишь наш идеальный выходной?",
-      "За что ты больше всего ценишь меня?",
-      "О чём ты мечтаешь, но редко говоришь вслух?"
-    ]
+    "Милые": ["Обнять партнёра и не отпускать ровно 30 секунд.", "Сказать партнёру 3 комплимента.", "Сделать партнёру массаж головы в течение 2 минут.", "Сказать друг другу «Я тебя люблю»."],
+    "Смешные": ["Изобразить любое действие или слово партнёра — а он должен угадать.", "Сделать самое смешное селфи вдвоём и поставить на аватарку в течение часа."],
+    "Заботливые": ["Принести партнёру стакан воды или его любимый напиток.", "Сделать партнёру лёгкий массаж плеч и шеи.", "Укрыть партнёра пледом и принести что-нибудь вкусненькое.", "Написать партнёру записку с тёплыми словами и спрятать в карман.", "Взять на себя одно домашнее дело партнёра на сегодня."],
+    "Вопросы": ["Какой твой самый любимый момент, проведённый со мной?", "Что я делаю такого, что всегда заставляет тебя улыбаться?", "Каким ты видишь наш идеальный выходной?", "За что ты больше всего ценишь меня?", "О чём ты мечтаешь, но редко говоришь вслух?"]
   },
   "Романтично": {
-    "Романтические": [
-      "Признаться в любви, глядя партнёру в глаза, не используя слово «люблю».",
-      "Станцевать медленный танец под любую песню, которая играет на фоне.",
-      "Поцеловать партнёра в самое неожиданное и нежное место.",
-      "Написать партнёру короткое любовное письмо и прочитать его вслух."
-    ],
-    "Игровые": [
-      "Угадай, что я рисую на твоей спине пальцем (сердечко, звезду, букву)."
-    ],
-    "Смешные": [
-      "Изобразить, как ты ревнуешь, но в комичной, преувеличенной форме.",
-      "Придумать смешное прозвище для партнёра и называть его так до конца игры.",
-      "Станцевать соблазнительный (но смешной) танец под любую песню."
-    ]
+    "Романтические": ["Признаться в любви, глядя партнёру в глаза, не используя слово «люблю».", "Станцевать медленный танец под любую песню, которая играет на фоне.", "Поцеловать партнёра в самое неожиданное и нежное место.", "Написать партнёру короткое любовное письмо и прочитать его вслух."],
+    "Игровые": ["Угадай, что я рисую на твоей спине пальцем (сердечко, звезду, букву)."],
+    "Смешные": ["Изобразить, как ты ревнуешь, но в комичной, преувеличенной форме.", "Придумать смешное прозвище для партнёра и называть его так до конца игры.", "Станцевать соблазнительный (но смешной) танец под любую песню."]
   },
   "Дерзко": {
-    "Дерзкие": [
-      "Поцеловать партнёра в шею и задержаться там на 5 секунд.",
-      "Снять с партнёра одну вещь (по выбору того, кто выполняет задание).",
-      "Станцевать для партнёра эротичный танец (можно под музыку, 30 секунд)."
-    ],
-    "Вопросы для Дерзко": [
-      "Какая моя черта характера или привычка тебя больше всего заводит?",
-      "О чём ты фантазируешь, когда мы не вместе?",
-      "Что бы ты хотел(а), чтобы я сделал(а) прямо сейчас?",
-      "Какую самую смелую вещь ты хотел(а) бы попробовать с нами?",
-      "Что тебя возбуждает во мне больше всего?"
-    ]
+    "Дерзкие": ["Поцеловать партнёра в шею и задержаться там на 5 секунд.", "Снять с партнёра одну вещь (по выбору того, кто выполняет задание).", "Станцевать для партнёра эротичный танец (можно под музыку, 30 секунд)."],
+    "Вопросы для Дерзко": ["Какая моя черта характера или привычка тебя больше всего заводит?", "О чём ты фантазируешь, когда мы не вместе?", "Что бы ты хотел(а), чтобы я сделал(а) прямо сейчас?", "Какую самую смелую вещь ты хотел(а) бы попробовать с нами?", "Что тебя возбуждает во мне больше всего?"]
   }
 };
 
@@ -371,20 +337,8 @@ const LEVEL_MAP = {
   "Дерзко":     { cats:["Дерзкие","Вопросы для Дерзко"],             icon:"🔥", desc:"Смело и провокационно" }
 };
 
-const SECRET_TASKS = [
-  "Тайное задание: скажи партнёру 5 комплиментов подряд без пауз.",
-  "Тайное задание: обними партнёра и прошепчи что-то приятное на ухо.",
-  "Тайное задание: признайся в самом неожиданном чувстве к партнёру.",
-  "Тайное задание: придумай совместную мечту на этот год.",
-  "Тайное задание: станцуй 15 секунд без музыки, глядя партнёру в глаза."
-];
-
-const MINE_TASKS = [
-  "Мина! Ты сам(а) выполняешь задание: расскажи партнёру о самом смешном вашем моменте.",
-  "Мина! Твоё задание: сделай партнёру искренний комплимент вслух.",
-  "Мина! Ты попал(а) на мину — обними партнёра 20 секунд.",
-  "Мина! Твоё задание: спой одну строчку из песни, которая ассоциируется с партнёром."
-];
+const SECRET_TASKS = ["Тайное задание: скажи партнёру 5 комплиментов подряд без пауз.", "Тайное задание: обними партнёра и прошепчи что-то приятное на ухо.", "Тайное задание: признайся в самом неожиданном чувстве к партнёру.", "Тайное задание: придумай совместную мечту на этот год.", "Тайное задание: станцуй 15 секунд без музыки, глядя партнёру в глаза."];
+const MINE_TASKS = ["Мина! Ты сам(а) выполняешь задание: расскажи партнёру о самом смешном вашем моменте.", "Мина! Твоё задание: сделай партнёру искренний комплимент вслух.", "Мина! Ты попал(а) на мину — обними партнёра 20 секунд.", "Мина! Твоё задание: спой одну строчку из песни, которая ассоциируется с партнёром."];
 
 const FLEET = [
   { name:"Линкор",  size:4, count:1, type:"ship" },
@@ -474,7 +428,6 @@ function renderPlaceBoard(){
       if(d.mine) cell.classList.add('mine');
       if(d.secret) cell.classList.add('secret');
       
-      // Обработка тапа
       cell.addEventListener('click', (e) => {
         e.preventDefault();
         placeAt(r,c);
@@ -551,17 +504,13 @@ $('rotate-btn').addEventListener('click', () => {
 
 $('random-btn').addEventListener('click', () => {
   if(!placeState) return;
-  // Очищаем поле
   const board = state.players[placeState.playerIndex].board;
   for(let r=0;r<10;r++) for(let c=0;c<10;c++) {
     board[r][c] = { ship:false, mine:false, secret:false, hit:false, miss:false, shipId:null };
   }
   state.players[placeState.playerIndex].ships = [];
-  
-  // Собираем заново весь флот
   placeState.fleetQueue = buildFleetQueue();
   
-  // Пытаемся расставить всё случайно
   let attempts = 0;
   while(placeState.fleetQueue.length > 0 && attempts < 1000){
     const s = placeState.fleetQueue[0];
@@ -657,9 +606,9 @@ function renderGameBoards(){
   gameState.targetBoard = state.players[enemy].board;
   gameState.ownPlayer = me;
   gameState.targetPlayer = enemy;
+  
   $('target-label').textContent = "Поле " + state.players[enemy].name + " — выбери клетку";
   renderBoard($('board-target'), gameState.targetBoard, true);
-  renderBoard($('board-own'), gameState.ownBoard, false);
 }
 
 function renderBoard(el, board, isTarget){
@@ -673,12 +622,6 @@ function renderBoard(el, board, isTarget){
       if(isTarget){
         if(d.hit) cell.classList.add('hit');
         else if(d.miss) cell.classList.add('miss');
-      } else {
-        if(d.ship) cell.classList.add('ship');
-        if(d.mine) cell.classList.add('mine');
-        if(d.secret) cell.classList.add('secret');
-        if(d.hit) cell.classList.add('hit');
-        if(d.miss) cell.classList.add('miss');
       }
 
       if(isTarget && !d.hit && !d.miss && !gameState.busy){
@@ -701,26 +644,30 @@ function fireAt(r,c){
 
     if(d.mine){
       gameState.busy = true;
+      // На мину попал текущий игрок, значит он и выполняет
       showTask(MINE_TASKS[Math.floor(Math.random()*MINE_TASKS.length)], "Мина", true);
       return;
     }
     if(d.secret){
       gameState.busy = true;
+      // В секретный корабль попал текущий, значит задание выполняет соперник (чей корабль)
       showTask(SECRET_TASKS[Math.floor(Math.random()*SECRET_TASKS.length)], "Секретный корабль", false);
       return;
     }
 
     const enemyShips = state.players[gameState.targetPlayer].ships;
     const ship = enemyShips.find(s => s.id === d.shipId);
-    if(ship && !ship.sunk && ship.cells.every(cc => board[cc.r][cc.c].hit)){
+    
+    if(ship && ship.cells.every(cc => board[cc.r][cc.c].hit)){
       ship.sunk = true;
-      gameState.busy = true;
-      const task = pickTask();
-      showTask(task.text, task.cat, false);
-      return;
     }
-    renderGameBoards();
-    checkWin();
+    
+    gameState.busy = true;
+    // При попадании в корабль задание выполняет тот, чей корабль (соперник)
+    const task = pickTask();
+    showTask(task.text, task.cat, false);
+    return;
+
   } else {
     d.miss = true;
     toast("Мимо!");
@@ -752,6 +699,13 @@ function showTask(text, tag, isMine){
   $('task-tag').textContent = tag;
   $('task-tag').className = 'task-tag' + (isMine ? ' mine' : '');
   $('task-text').textContent = text;
+  
+  // Определяем, кто выполняет задание
+  // isMine = true -> выполняет тот, кто стрелял (текущий)
+  // isMine = false -> выполняет тот, чей корабль (соперник)
+  const executorName = isMine ? state.players[state.current].name : state.players[1 - state.current].name;
+  $('task-executor').textContent = "Выполняет: " + executorName;
+
   $('btn-replace').style.display = isMine ? 'none' : 'block';
   $('modal-back').classList.add('show');
 }
@@ -767,16 +721,22 @@ $('btn-replace').addEventListener('click', () => {
 
 $('btn-done').addEventListener('click', () => {
   $('modal-back').classList.remove('show');
+  
+  // Начисляем звезду тому, кто выполнял
   const performer = modalTask.isMine ? state.current : (1 - state.current);
   state.players[performer].stars++;
   modalTask = null;
 
-  if(checkWin()) { gameState.busy = false; return; }
+  if(checkWin()) { 
+    gameState.busy = false; 
+    return; 
+  }
 
+  // Ход всегда переходит сопернику
   state.current = 1 - state.current;
   updateTurnUI();
+  gameState.busy = false; 
   renderGameBoards();
-  gameState.busy = false;
 });
 
 /* =========================================================
